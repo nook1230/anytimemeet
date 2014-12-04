@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mamascode.mybatis.mapper.ClubArticleReplyMapper">
+	<!-- ***************************************************************** -->
+	<!-- ************************** 갱신 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<insert id="insertNewReply" parameterType="Reply">
+		INSERT INTO article_replies (article_id, writer_name, content, write_date) 
+		VALUES(#{targetId}, #{writerName}, #{content}, NOW())
+	</insert>
+	
+	<update id="updateReply" parameterType="Reply">
+		UPDATE article_replies SET content = #{content} 
+		WHERE article_reply_id = #{replyId}
+	</update>
+	
+	<delete id="deleteReply" parameterType="Integer">
+		DELETE FROM article_replies WHERE article_reply_id = #{replyId}
+	</delete>
+	
+	<delete id="deleteRepliesOfArticle" parameterType="Integer">
+		DELETE FROM article_replies WHERE article_id = #{articleId}
+	</delete>
+	
+	<delete id="deleteRepliesOfClub" parameterType="String">
+		DELETE FROM article_replies 
+		WHERE article_id IN 
+			(SELECT article_id FROM club_articles WHERE club_name = #{clubName})
+	</delete>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 조회 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<select id="selectCount" resultType="Integer">
+		SELECT COUNT(*) FROM article_replies;
+	</select>
+	
+	<select id="selectReply" parameterType="Integer" resultMap="ArticleReplyBaseMap">
+		SELECT ar.article_reply_id, ar.article_id, ar.writer_name, ar.content,
+			ar.write_date, u.nickname AS writer_nickname
+		FROM article_replies AS ar LEFT OUTER JOIN users AS u
+			ON ar.writer_name = u.user_name
+		WHERE ar.article_reply_id = #{replyId}
+	</select>
+	
+	<select id="selectCountReplies" resultType="Integer">
+		SELECT COUNT(*) FROM article_replies WHERE article_id = #{articleId}
+	</select>
+	
+	<select id="selectReplies" parameterType="Integer" resultMap="ArticleReplyBaseMap">
+		SELECT ar.article_reply_id, ar.article_id, ar.writer_name, ar.content,
+			ar.write_date, u.nickname AS writer_nickname
+		FROM article_replies AS ar LEFT OUTER JOIN users AS u
+			ON ar.writer_name = u.user_name
+		WHERE ar.article_id = #{articleId}
+		ORDER BY ar.write_date ASC
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** Result Map *************************** -->
+	<!-- ***************************************************************** -->
+	<resultMap id="ArticleReplyBaseMap" type="Reply">
+		<id column="article_reply_id" jdbcType="INTEGER" property="replyId" />
+		<result column="article_id" jdbcType="INTEGER" property="targetId" />
+		<result column="writer_name" jdbcType="VARCHAR" property="writerName" />
+		<result column="writer_nickname" jdbcType="VARCHAR" property="writerNickname" />
+		<result column="content" jdbcType="VARCHAR" property="content" />
+		<result column="write_date" jdbcType="TIMESTAMP" property="writeDate" />
+	</resultMap>
+</mapper>

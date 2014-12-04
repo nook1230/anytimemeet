@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mamascode.mybatis.mapper.NoticeMapper">
+	<!-- ***************************************************************** -->
+	<!-- ************************** 갱신 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- insertNotice: 새 알림 삽입(솔직히 trim 태그를 안 써도 됨, 연습 삼아 써봄) -->
+	<insert id="insertNotice" parameterType="Notice">
+		INSERT INTO notices
+		<trim prefix="(" suffix=")" prefixOverrides=", " >
+		user_name, notice_msg, notice_type, notice_date 
+		<if test="noticeUrl != ''">, notice_url</if>
+		<if test="extra != ''">, extra</if>
+		</trim>
+		VALUES 
+		<trim prefix="(" suffix=")" prefixOverrides=", " >
+		#{userName}, #{noticeMsg}, #{noticeType}, NOW() 
+		<if test="noticeUrl != ''">, #{noticeUrl}</if>
+		<if test="extra != ''">, #{extra}</if>
+		</trim>
+	</insert>
+	
+	<!-- readNotice: 알림 읽음 표시 -->
+	<update id="readNotice" parameterType="Integer">
+		UPDATE notices SET notice_read = 1 
+		WHERE notice_id = #{noticeId} AND notice_read = 0
+	</update>
+	
+	<!-- readNoticesOfUser: 해당 사용자의 알림 읽음 표시 -->
+	<update id="readNoticesOfUser" parameterType="String">
+		UPDATE notices SET notice_read = 1 
+		WHERE user_name = #{userName} AND notice_read = 0
+	</update>
+	
+	<!-- deleteNotice: 알림 삭제 -->
+	<delete id="deleteNotice" parameterType="Integer">
+		DELETE FROM notices WHERE notice_id = #{noticeId};
+	</delete>
+	
+	<!-- deleteNoticeByUserName: 해당 사용자의 알림 모두 삭제 -->
+	<delete id="deleteNoticeByUserName" parameterType="String">
+		DELETE FROM notices WHERE user_name = #{userName};
+	</delete>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 조회 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- selectCount -->
+	<select id="selectCount" resultType="Integer">
+		SELECT COUNT(*) FROM notices
+	</select>
+	
+	<!-- selectCountByUserName: 사용자의 알림 개수 -->
+	<select id="selectCountByUserName" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM notices WHERE user_name = #{userName}
+	</select>
+	
+	<!-- selectCountByUserNameFiltered: 사용자의 알림 개수(read 조건 필터링) -->
+	<select id="selectCountByUserNameFiltered" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM notices WHERE user_name = #{userName}
+		<if test="read == 1">
+		AND notice_read = 1
+		</if>
+		
+		<if test="read == 2">
+		AND notice_read = 0
+		</if>
+	</select>
+	
+	<!-- selectNoticeByUserName: 해당 사용자의 알림 가져오기 -->
+	<select id="selectNoticeByUserName" parameterType="String" resultMap="NoticeBaseMap">
+		SELECT notice_id, user_name, notice_msg, notice_url, 
+			notice_read, notice_type, extra, notice_date
+		FROM notices 
+		WHERE user_name = #{userName}
+		<if test="read == 1">
+		AND notice_read = 1
+		</if>
+		
+		<if test="read == 2">
+		AND notice_read = 0
+		</if>
+		ORDER BY notice_date DESC
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- **************************** for test *************************** -->
+	<!-- ***************************************************************** -->
+	
+	<delete id="deleteAll">
+		DELETE FROM notices;
+	</delete>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** Result Map *************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 모임 기본 맵 -->
+	<resultMap id="NoticeBaseMap" type="Notice">
+		<id column="notice_id" jdbcType="INTEGER" property="noticeId" />
+		<result column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="notice_msg" jdbcType="VARCHAR" property="noticeMsg" />
+		<result column="notice_url" jdbcType="VARCHAR" property="noticeUrl" />
+		<result column="notice_read" jdbcType="BOOLEAN" property="noticeRead" />
+		<result column="notice_type" jdbcType="INTEGER" property="noticeType" />
+		<result column="extra" jdbcType="VARCHAR" property="extra" />
+		<result column="notice_date" jdbcType="TIMESTAMP" property="noticeDate" />
+	</resultMap>
+</mapper>

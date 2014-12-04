@@ -1,0 +1,105 @@
+/* percent width */
+.w-100 { width: 100%; }
+.w-90 { width: 90%; }
+.w-80 { width: 80%; }
+.w-66 { width: 66%; }
+.w-50 { width: 50%; }
+.w-33 { width: 33%; }
+
+/* font style */
+.small { font-size: 0.9em; }
+.font-very-small { font-size: 0.8em; }
+.font-small { font-size: 0.9em; }
+.font-normal-size { font-size: 1em; }
+.font-large { font-size: 1.2em; }
+.font-larger { font-size: 1.5em; }
+
+.font-bold { font-weight: bold; }
+.font-normal { font-weight: normal; }
+
+/* heading */
+.font-header1 { font-size: 1.5em; font-weight: bold; }
+.font-header2 { font-size: 1.3em; font-weight: bold; }
+.font-header3 { font-size: 1.1em; font-weight: bold; }
+
+/* text alignment */
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+
+/* element alignment */
+.pull-right { float: right; }
+.pull-left { float: left; }
+.pull-center { margin-left: auto; margin-right: auto; }
+
+/* color */
+.color-red { color: red; }
+.color-gray { color: gray; }
+.color-green { color: green; }
+.color-silver { color: silver; }
+.color-skyblue { color: skyblue; }
+.color-teal { color: teal; }
+.color-orange { color: orange; }
+.color-blue { color: blue; }
+
+/* widget */
+.span_default_btn { 
+	display: inline-block; height: 1.2em; font-size: 1em; color: black;
+	background-color: #4682B4;
+}
+.btn { cursor: pointer; }
+
+/* table */
+.basic_table {
+	margin-left: auto;
+	margin-right: auto;
+	border-collapse: collapse;
+}
+
+.basic_table td, th { padding: 1em; }
+
+.lined_table { }
+.lined_table td { border-top: 1px solid black; border-bottom: 1px solid black;}
+.lined_table th { border-top: 1px solid black; border-bottom: 1px solid black;}
+
+.none_lined_table { }
+.none_lined_table td { border-top: none; border-bottom: none;}
+.none_lined_table th { border-top: none; border-bottom: none;}
+
+/* input */
+.verySmallInput { width: 15px; }
+.smallInput { width: 30px; }
+.mediumInput { width: 150px; }
+.bigInput { width: 500px; }
+
+.bigText { width: 500px; height: 300px; }
+
+/* extra style */
+.content_text { 
+	text-align: justify; font-size: 0.9em; 
+	line-height: 1.5em; background-color: #DCDCDC; 
+}
+
+.error { color: red; font-size: 1em; }
+
+div.error_msg_box { 
+	width: 500px; height: 320px; 
+	margin-top: 50px; 
+	margin-left: auto; 
+	margin-right: auto;
+	border: 1px solid gray;
+	text-align: center;
+	padding-top: 30px;
+}
+
+
+/* link style */
+a:link, a:visited {
+	font-size: 1em;
+	color: black;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}

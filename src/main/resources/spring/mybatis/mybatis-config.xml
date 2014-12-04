@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+	<mappers>
+		<mapper resource="spring/mybatis/mappers/UserMapper.xml" />
+		<mapper resource="spring/mybatis/mappers/ClubMapper.xml" />
+		<mapper resource="spring/mybatis/mappers/MeetingMapper.xml" />
+		<mapper resource="spring/mybatis/mappers/ProfilePictureMapper.xml" />
+		<mapper resource="spring/mybatis/mappers/ClubArticleMapper.xml" />
+		<mapper resource="spring/mybatis/mappers/ClubArticleReplyMapper.xml" />
+		<mapper resource="spring/mybatis/mappers/MeetingReplyMapper.xml" />
+		<mapper resource="spring/mybatis/mappers/NoticeMapper.xml" />
+	</mappers>
+</configuration>

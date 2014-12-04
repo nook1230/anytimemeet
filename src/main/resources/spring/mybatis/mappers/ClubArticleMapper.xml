@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mamascode.mybatis.mapper.ClubArticleMapper">
+	<!-- ***************************************************************** -->
+	<!-- ************************** 갱신 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 새 글 추가 -->
+	<insert id="insertNewClubArticle" parameterType="ClubArticle">
+		INSERT INTO club_articles 
+		(club_name, writer_name, title, content, write_date) 
+		VALUES (#{clubName}, #{writerName}, #{title}, #{content}, NOW())
+	</insert>
+	
+	<!-- 기존 글 업데이트 -->
+	<update id="updateClubArticle" parameterType="ClubArticle">
+		UPDATE club_articles SET 
+		title = #{title}, content = #{content} WHERE article_id = #{articleId}
+	</update>
+	
+	<!-- 글 삭제 -->
+	<delete id="deleteClubArticle" parameterType="Integer">
+		DELETE FROM club_articles WHERE article_id = #{articleId}
+	</delete>
+	
+	<!-- 글 삭제 -->
+	<delete id="deleteClubArticleByclubName" parameterType="String">
+		DELETE FROM club_articles WHERE club_name = #{clubName}
+	</delete>
+	
+	<update id="blindArticle" parameterType="Integer">
+		UPDATE club_articles SET blind = 1 WHERE article_id = #{articleId}
+	</update>
+	
+	<update id="unblindArticle" parameterType="Integer">
+		UPDATE club_articles SET blind = 0 WHERE article_id = #{articleId}
+	</update>
+	
+	<select id="selectArticleViewCount" parameterType="Integer" resultType="Integer">
+		SELECT view_count FROM club_articles WHERE article_id = #{articleId}
+	</select>
+	
+	<update id="updateArticleViewCount" parameterType="hashmap">
+		UPDATE club_articles SET view_count = #{viewCount} WHERE article_id = #{articleId}
+	</update>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 조회 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 전체 글 수 조회 -->
+	<select id="selectCount" resultType="Integer">
+		SELECT COUNT(*) FROM club_articles
+	</select>
+	
+	<!-- 해당 동아리의 게시글 수 조회 -->
+	<select id="selectCountForClub" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM club_articles WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- 해당 작성자의 게시글 수 조회 -->
+	<select id="selectCountForWriter" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM club_articles WHERE writer_name = #{writerName}
+	</select>	
+	
+	<!-- 게시글 내용 보기 -->
+	<select id="selectArticle" parameterType="Integer" resultMap="ClubArticleMap">
+		SELECT ca.article_id, ca.club_name, ca.title, ca.writer_name, ca.content,
+				ca.write_date, ca.blind, ca.view_count, u.nickname AS writer_nickname 
+		FROM club_articles AS ca LEFT OUTER JOIN users AS u
+			ON ca.writer_name = u.user_name
+		WHERE article_id = #{articleId}
+	</select>
+	
+	<!-- 게시글 목록 보기(동아리) -->
+	<select id="selectArticleListForClub" parameterType="String" resultMap="ClubArticleMap">
+		SELECT ca.article_id, ca.club_name, ca.title, ca.writer_name, ca.content,
+				ca.write_date, ca.blind, ca.view_count, u.nickname AS writer_nickname 
+		FROM club_articles AS ca LEFT OUTER JOIN users AS u
+			ON ca.writer_name = u.user_name 
+		WHERE ca.club_name = #{clubName} ORDER BY ca.write_date DESC
+	</select>
+	
+	<!-- 게시글 목록 보기(작성자) -->
+	<select id="selectArticleListForWriter" parameterType="String" resultMap="ClubArticleMap">
+		SELECT ca.article_id, ca.club_name, ca.title, ca.writer_name, ca.content,
+				ca.write_date, ca.blind, ca.view_count, u.nickname AS writer_nickname 
+		FROM club_articles AS ca LEFT OUTER JOIN users AS u
+			ON ca.writer_name = u.user_name 
+		WHERE ca.writer_name = #{writerName} ORDER BY ca.write_date DESC
+	</select>
+	
+	<!-- 현재 세션에서 최종적으로 삽입된 레코드 식별 번호 -->
+	<select id="selectLastInsertId" resultType="Integer">
+		SELECT LAST_INSERT_ID()
+	</select>
+	
+	<!-- meeting_id의 최대 번호 -->
+	<select id="selectMaxId" resultType="Integer">
+		SELECT MAX(article_id) FROM club_articles
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** Result Map *************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!--동아리 게시물 맵 -->
+	<resultMap id="ClubArticleMap" type="ClubArticle">
+		<id column="article_id" jdbcType="INTEGER" property="articleId" />
+		<result column="club_name" jdbcType="VARCHAR" property="clubName" />
+		<result column="writer_name" jdbcType="VARCHAR" property="writerName" />
+		<result column="writer_nickname" jdbcType="VARCHAR" property="writerNickname" />
+		<result column="title" jdbcType="VARCHAR" property="title" />
+		<result column="content" jdbcType="VARCHAR" property="content" />
+		<result column="write_date" jdbcType="TIMESTAMP" property="writeDate" />
+		<result column="blind" jdbcType="BOOLEAN" property="blind" />
+		<result column="view_count" jdbcType="INTEGER" property="viewCount" />
+	</resultMap>
+</mapper>

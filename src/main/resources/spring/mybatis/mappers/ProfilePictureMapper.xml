@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mamascode.mybatis.mapper.ProfilePictureMapper">
+	<!-- ***************************************************************** -->
+	<!-- ************************** 갱신 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 새 프로필 사진 추가 -->
+	<insert id="insertNewProfilePicture" parameterType="hashmap">
+		INSERT INTO profile_pictures (user_name, file_name) 
+		VALUES (#{userName}, #{fileName})
+	</insert>
+	
+	<!-- 기존 사진 업데이트(by pic_id) -->
+	<update id="updateProfilePictureByPicId" parameterType="hashmap">
+		UPDATE profile_pictures SET file_name = #{fileName} WHERE pic_id = #{picId}
+	</update>
+	
+	<!-- 기존 사진 업데이트(by user_name) -->
+	<update id="updateProfilePictureByUserName" parameterType="hashmap">
+		UPDATE profile_pictures SET file_name = #{fileName} WHERE user_name = #{userName}
+	</update>
+	
+	<!-- 프로필 파일 사진 삭제(by pic_id) -->
+	<delete id="deleteProfilePictureByPicId" parameterType="Integer">
+		DELETE FROM profile_pictures WHERE pic_id = #{picId}
+	</delete>
+	
+	<!-- 프로필 파일 사진 삭제(by user_name) -->
+	<delete id="deleteProfilePictureByUserName" parameterType="String">
+		DELETE FROM profile_pictures WHERE user_name = #{userName}
+	</delete>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 조회 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 프로필 사진 레코드 수 조회 -->
+	<select id="selectCount">
+		SELECT COUNT(*) FROM profile_pictures
+	</select>
+	
+	<!-- 프로필 사진이 존재하는지 -->
+	<select id="checkProfilePicture" parameterType="String" resultType="Integer">
+		SELECT COUNT(pic_id) FROM profile_pictures WHERE user_name = #{userName}
+	</select>
+	
+	<select id="selectProfilePictureByUserName" parameterType="String" resultMap="ProfilePictureMap">
+		SELECT * FROM profile_pictures WHERE user_name = #{userName}
+	</select>
+	
+	<select id="selectProfilePictureByPicId" parameterType="Integer" resultMap="ProfilePictureMap">
+		SELECT * FROM profile_pictures WHERE pic_id = #{picId}
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** Result Map *************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!--프로필 사진 정보 맵 -->
+	<resultMap id="ProfilePictureMap" type="ProfilePicture">
+		<id column="pic_id" jdbcType="INTEGER" property="picId" />
+		<result column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="file_name" jdbcType="VARCHAR" property="fileName" />
+	</resultMap>
+</mapper>

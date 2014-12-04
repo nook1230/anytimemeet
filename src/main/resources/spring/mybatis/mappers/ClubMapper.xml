@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mamascode.mybatis.mapper.ClubMapper">
+	<!-- ***************************************************************** -->
+	<!-- ************************** 갱신 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 새 동아리 생성 -->
+	<insert id="insertNewClub" parameterType="Club">
+		INSERT INTO clubs (club_name, club_title, grand_category_id, master_name, 
+			date_of_created, type, max_member_num, club_introduction
+			<if test="categoryId != -1">, category_id</if>)
+			VALUES (#{clubName}, #{clubTitle}, #{grandCategoryId}, #{masterName}, 
+			NOW(), #{type}, #{maxMemberNum}, #{clubIntroduction}
+			<if test="categoryId != -1">, #{categoryId}</if>)
+	</insert>
+	
+	<!-- 해당 동아리 식별 이름이 존재하는지 체크 -->
+	<select id="checkClubName" parameterType="String" resultType="Integer">
+		SELECT COUNT(club_name) FROM clubs WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 비활성화 -->
+	<update id="inactivateClub" parameterType="String">
+		UPDATE clubs SET active = 0 WHERE club_name = #{clubName}
+	</update>
+	
+	<!-- 동아리 활성화 -->
+	<update id="activateClub" parameterType="String">
+		UPDATE clubs SET active = 1 WHERE club_name = #{clubName}
+	</update>
+	
+	<!-- 동아리 정보 수정 -->
+	<update id="updateClub" parameterType="Club">
+		UPDATE clubs SET club_title = #{clubTitle}, <if test="categoryId != -1">category_id = #{categoryId},</if> 
+				type = #{type}, max_member_num = #{maxMemberNum},
+				grand_category_id = #{grandCategoryId}, club_introduction = #{clubIntroduction} 
+		WHERE club_name = #{clubName}
+	</update>
+	
+	<!-- 동아리 삭제 -->
+	<delete id="deleteClub" parameterType="String">
+		DELETE FROM clubs WHERE club_name = #{clubName}		
+	</delete>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 조회 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 테이블의 레코드 수 조회 -->
+	<select id="selectCount" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM clubs
+		<if test="searchby == 1">
+		WHERE club_name LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		
+		<if test="searchby == 2">
+		WHERE category_id = #{keyword} OR grand_category_id = #{keyword}
+		</if>
+	</select>
+	
+	<!-- 동아리 정보 조회 -->
+	<select id="selectClubByClubName" parameterType="String" resultMap="ClubBaseMap">
+		SELECT c.club_no, c.club_name, c.club_title, c.grand_category_id, 
+			cc.category_title AS grand_category_title, c. category_id, 
+			scc.category_title AS category_title, c.master_name, c.club_introduction, 
+			c.type, c.max_member_num, c.active, c.recruit, c.date_of_created
+		FROM clubs AS c INNER JOIN club_categories AS cc 
+				ON c.grand_category_id = cc.category_id
+			LEFT OUTER JOIN club_categories AS scc 
+				ON c.category_id = scc.category_id
+		WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 회원 수 조회 -->
+	<select id="selectClubMembersCount" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM club_members WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 리스트 -->
+	<select id="selectList" parameterType="hashmap" resultMap="ClubBaseMap">
+		SELECT c.club_no, c.club_name, c.club_title, c.grand_category_id, 
+			cc.category_title AS grand_category_title, c. category_id, 
+			scc.category_title AS category_title, c.master_name, c.club_introduction,
+			c.type, c.max_member_num, c.active, c.recruit, c.date_of_created
+		FROM clubs AS c INNER JOIN club_categories AS cc 
+				ON c.grand_category_id = cc.category_id
+			LEFT OUTER JOIN club_categories AS scc 
+				ON c.category_id = scc.category_id
+		<if test="searchby == 1">
+		WHERE club_name LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		<if test="searchby == 2">
+		WHERE c.category_id = #{keyword} OR c.grand_category_id = #{keyword}
+		</if>
+		
+		<if test="orderby == 0">
+		ORDER BY club_no
+		</if>
+		
+		<if test="orderby == 1">
+		ORDER BY club_name DESC
+		</if>
+		
+		<if test="orderby == 2">
+		ORDER BY club_name ASC
+		</if>
+		
+		<if test="orderby == 3">
+		ORDER BY date_of_created DESC
+		</if>
+		
+		<if test="orderby == 4">
+		ORDER BY date_of_created ASC
+		</if>
+	</select>
+	
+	<!-- *** 사용자의 가입 동아리 정보 *** -->
+	<!-- ************************ -->
+	<!-- 사용자 가입 동아리 수 -->
+	<select id="selectCountUserClubs" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM club_members WHERE member_name = #{userName}
+	</select>
+	
+	<!-- 사용자 가입 동아리 리스트 -->
+	<select id="selectUserClubs" parameterType="String" resultMap="ClubBaseMap">
+		SELECT c.club_no, c.club_name, c.club_title, c.grand_category_id, 
+			cc.category_title AS grand_category_title, c. category_id, 
+			scc.category_title AS category_title, c.master_name, c.club_introduction,
+			c.type, c.max_member_num, c.active, c.recruit, c.date_of_created
+		FROM clubs AS c INNER JOIN club_categories AS cc 
+				ON c.grand_category_id = cc.category_id
+			LEFT OUTER JOIN club_categories AS scc 
+				ON c.category_id = scc.category_id
+			INNER JOIN club_members AS cm
+				ON c.club_name = cm.club_name
+		WHERE cm.member_name = #{userName}
+		ORDER BY c.club_name ASC
+	</select>
+	<!-- ************************ -->
+	
+	<!-- 동아리 회원인지 체크 -->
+	<select id="checkClubMember" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM club_members 
+		WHERE club_name = #{clubName} AND member_name = #{memberName}
+	</select>	
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************ 동아리 가입 관련 구문들 ************************ -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 동아리 가입 -->
+	<insert id="insertClubMember" parameterType="hashmap">
+		INSERT INTO club_members (club_name, member_name, join_date) 
+		VALUES (#{clubName}, #{memberName}, NOW())
+	</insert>
+	
+	<!-- 동아리 탈퇴 -->
+	<delete id="deleteClubMember" parameterType="hashmap">
+		DELETE FROM club_members 
+		WHERE club_name = #{clubName} AND member_name = #{memberName}
+	</delete>
+	
+	<!-- 동아리 가입 신청 정보 삽입 -->
+	<insert id="insertJoinApplication" parameterType="ClubJoinInfo">
+		INSERT INTO club_join_applications (club_name, user_name, comment, appl_date)
+			VALUES (#{clubName}, #{userName}, #{comment}, NOW())
+	</insert>
+	
+	<!-- 동아리 가입 초대 정보 삽입 -->
+	<insert id="insertJoinInvitation" parameterType="ClubJoinInfo">
+		INSERT INTO club_invitations (club_name, user_name, comment, inv_date)
+			VALUES (#{clubName}, #{userName}, #{comment}, NOW())
+	</insert>
+	
+	<!-- 동아리 가입 신청을 받은 사용자인지 -->
+	<select id="checkClubJoinApplication" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM club_join_applications 
+		WHERE club_name = #{clubName} AND user_name = #{userName}
+	</select>
+	
+	<!-- 동아리 가입 초대를 받은 사용자인지 -->
+	<select id="checkClubInvitation" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM club_invitations 
+		WHERE club_name = #{clubName} AND user_name = #{userName}
+	</select>
+	
+	<!-- 동아리 가입 신청 정보 삭제 -->
+	<delete id="deleteClubJoinApplication" parameterType="hashmap">
+		DELETE FROM club_join_applications WHERE club_name = #{clubName} AND user_name = #{userName}
+	</delete>
+	
+	<!-- 동아리 가입 초대 정보 삭제 -->
+	<delete id="deleteClubJoinInvitation" parameterType="hashmap">
+		DELETE FROM club_invitations WHERE club_name = #{clubName} AND user_name = #{userName}
+	</delete>
+	
+	<!-- 동아리 폐쇄 -->
+	<delete id="deleteClubMembersAll" parameterType="String">
+		DELETE FROM club_members WHERE club_name = #{clubName}
+	</delete>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************ 동아리 회원 관련 구문들 ************************ -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 동아리 회원 수 조회 -->
+	<select id="selectCountClubMembers" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM club_members WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 회원 리스트 -->
+	<select id="selectClubMembers" parameterType="String" resultMap="ClubMemberMap">
+		SELECT u.user_no, u.user_name, u.email, u.date_of_join, 
+			c.active, u.nickname, u.user_real_name, u.date_of_birth, 
+			c.join_date, p.pic_id, p.file_name 
+		FROM users AS u INNER JOIN club_members AS c 
+				ON u.user_name = c.member_name 
+			LEFT OUTER JOIN profile_pictures AS p 
+				ON u.user_name = p.user_name 
+		WHERE c.club_name = #{clubName} ORDER BY c.join_date ASC
+	</select>
+	
+	<!-- 동아리 회원 이름(모두) -->
+	<select id="selectClubMemberNames" parameterType="String" resultType="String">
+		SELECT member_name FROM club_members WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 가입 신청 리스트 -->
+	<select id="selectClubJoinApplicationList" parameterType="String" resultMap="clubJoinInformationMap">
+		SELECT cj.club_name, cj.user_name, c.club_title, cj.comment 
+		FROM clubs AS c, club_join_applications AS cj 
+		WHERE c.club_name = cj.club_name AND cj.club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 가입 신청 리스트 -->
+	<select id="selectClubJoinInvitationList" parameterType="String" resultMap="clubJoinInformationMap">
+		SELECT ci.club_name, ci.user_name, c.club_title, ci.comment 
+		FROM clubs AS c, club_invitations AS ci 
+		WHERE c.club_name = ci.club_name AND ci.club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 가입 신청 건수 조회 -->
+	<select id="selectCountClubJoinApplication" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM club_join_applications WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 가입 초대 건수 조회 -->
+	<select id="selectCountClubJoinInvitation" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM club_invitations WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************ 동아리 운영진 관련 구문들 *********************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 동아리 마스터인지 확인 -->
+	<select id="checkClubMaster" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM clubs WHERE master_name = #{userName} AND club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 운영진인지 확인 -->
+	<select id="checkClubCrew" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM club_crew WHERE crew_name = #{userName} AND club_name = #{clubName}
+	</select>
+	
+	<!-- 동아리 운영진 추가 -->
+	<insert id="insertClubCrew" parameterType="hashmap">
+		INSERT INTO club_crew (club_name, crew_name, appointed_date) 
+		VALUES (#{clubName}, #{userName}, NOW())
+	</insert>
+	
+	<!-- 동아리 운영진 추가 -->
+	<delete id="deleteClubCrew" parameterType="hashmap">
+		DELETE FROM club_crew WHERE club_name = #{clubName} AND crew_name = #{userName}
+	</delete>
+	
+	<!-- 동아리 운영진 목록 -->
+	<select id="selectClubCrewList" parameterType="String" resultMap="ClubCrewMap">
+		SELECT u.user_no, u.user_name, u.nickname, c.appointed_date 
+		FROM club_crew c, users u 
+		WHERE c.crew_name = u.user_name AND c.club_name = #{clubName}
+		ORDER BY c.crew_id ASC
+	</select>
+	
+	<!-- 동아리 운영진 수 -->
+	<select id="selectClubCrewCount" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM club_crew WHERE club_name = #{clubName}
+	</select>
+	
+	<select id="selectMasterClubName" parameterType="String" resultType="String">
+		SELECT club_name FROM clubs WHERE master_name = #{userName}
+	</select>
+	
+	<select id="selectCrewClubName" parameterType="String" resultType="String">
+		SELECT club_name FROM club_crew WHERE crew_name = #{userName}
+	</select>
+	
+	<select id="selectUserClubName" parameterType="String" resultType="String">
+		SELECT club_name FROM club_members WHERE member_name = #{userName}
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************ 회원 탈퇴를 위한 구문들 ************************ -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 해당 사용자의 운영진 정보 모두 삭제 -->
+	<delete id="deleteClubCrewForUser" parameterType="String">
+		DELETE FROM club_crew WHERE crew_name = #{userName}
+	</delete>
+	
+	<!-- 해당 사용자의 동아리 가입 신청 정보 모두 삭제 -->
+	<delete id="deleteClubJoinApplicationForUser" parameterType="String">
+		DELETE FROM club_join_applications WHERE user_name = #{userName}
+	</delete>
+	
+	<!-- 해당 사용자의 동아리 초대 정보 모두 삭제 -->
+	<delete id="deleteClubJoinInvitationForUser" parameterType="String">
+		DELETE FROM club_invitations WHERE user_name = #{userName}
+	</delete>
+	
+	<!-- 해당 사용자의 동아리 회원 정보 모두 삭제 -->
+	<delete id="deleteClubMemberForUser" parameterType="String">
+		DELETE FROM club_members WHERE member_name = #{userName}
+	</delete>
+	
+	<!-- ***************************************************************** -->
+	<!-- ****************************** 검색 ****************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 동아리 회원 검색 -->
+	<select id="selectClubMemberListSearch" parameterType="hashmap" resultMap="ClubMemberAbbreviationMap">
+		SELECT u.user_name, u.nickname, u.user_no, cm.join_date 
+		FROM club_members AS cm INNER JOIN users AS u ON cm.member_name = u.user_name
+		<trim prefix="WHERE" prefixOverrides="AND">
+		cm.club_name = #{clubName}
+		
+		<if test="searchType == 0">
+		AND u.user_name LIKE CONCAT('%', #{keyword} ,'%')
+		</if>
+		
+		<if test="searchType == 1">
+		AND u.nickname LIKE CONCAT('%', #{keyword} ,'%')
+		</if>
+		
+		<if test="searchType == 2">
+		AND (u.user_name LIKE CONCAT('%', #{keyword} ,'%') 
+			OR u.nickname LIKE CONCAT('%', #{keyword},'%'))
+		</if>
+		</trim>
+	</select>
+	
+	<!-- 동아리 회원 검색 결과 수 조회 -->
+	<select id="selectClubMemberCountSearch" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) 
+		FROM club_members AS cm INNER JOIN users AS u 
+				ON cm.member_name = u.user_name
+		<trim prefix="WHERE" prefixOverrides="AND">
+		cm.club_name = #{clubName}
+		
+		<if test="searchType == 0">
+		AND u.user_name LIKE CONCAT('%', #{keyword} ,'%')
+		</if>
+		
+		<if test="searchType == 1">
+		AND u.nickname LIKE CONCAT('%', #{keyword} ,'%')
+		</if>
+		
+		<if test="searchType == 2">
+		AND (u.user_name LIKE CONCAT('%', #{keyword} ,'%') 
+			OR u.nickname LIKE CONCAT('%', #{keyword},'%'))
+		</if>
+		</trim>
+	</select>
+	
+	<!-- 동아리 운영진 검색 -->
+	<select id="selectClubCrewListSearch" parameterType="hashmap" resultMap="ClubCrewAbbreviationMap">
+		SELECT u.user_name, u.nickname, u.user_no, c.appointed_date 
+		FROM club_crew AS c INNER JOIN users AS u ON c.crew_name = u.user_name
+		<trim prefix="WHERE" prefixOverrides="AND">
+		c.club_name = #{clubName}
+		
+		<if test="searchType == 0">
+		AND u.user_name LIKE CONCAT('%', #{keyword} ,'%')
+		</if>
+		
+		<if test="searchType == 1">
+		AND u.nickname LIKE CONCAT('%', #{keyword} ,'%')
+		</if>
+		
+		<if test="searchType == 2">
+		AND (u.user_name LIKE CONCAT('%', #{keyword} ,'%') 
+			OR u.nickname LIKE CONCAT('%', #{keyword},'%'))
+		</if>
+		</trim>
+	</select>
+	
+	<!-- 동아리 운영진 검색 결과 수 조회 -->
+	<select id="selectClubCrewCountSearch" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) 
+		FROM club_crew AS c INNER JOIN users AS u 
+				ON c.crew_name = u.user_name
+		<trim prefix="WHERE" prefixOverrides="AND">
+		c.club_name = #{clubName}
+		
+		<if test="searchType == 0">
+		AND u.user_name LIKE CONCAT('%', #{keyword} ,'%')
+		</if>
+		
+		<if test="searchType == 1">
+		AND u.nickname LIKE CONCAT('%', #{keyword} ,'%')
+		</if>
+		
+		<if test="searchType == 2">
+		AND (u.user_name LIKE CONCAT('%', #{keyword} ,'%') 
+			OR u.nickname LIKE CONCAT('%', #{keyword},'%'))
+		</if>
+		</trim>
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 동아리 마스터 권한 양도 ********************** -->
+	<!-- ***************************************************************** -->
+	
+	<update id="transferMaster" parameterType="hashmap">
+		UPDATE clubs SET master_name = #{newMasterName} WHERE club_name = #{clubName}
+	</update>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** deleting a club ********************** -->
+	<!-- ***************************************************************** -->
+	
+	<delete id="deleteClubCrewAll" parameterType="String">
+		DELETE FROM club_crew WHERE club_name = #{clubName}
+	</delete>
+	
+	<delete id="deleteClubJoinApplicationAll" parameterType="String">
+		DELETE FROM club_join_applications WHERE club_name = #{clubName}
+	</delete>
+	
+	<delete id="deleteClubJoinInvitationAll" parameterType="String">
+		DELETE FROM club_invitations WHERE club_name = #{clubName}
+	</delete>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** Club Category ************************ -->
+	<!-- ***************************************************************** -->	
+	<insert id="insertNewClubCategory" parameterType="ClubCategory">
+		INSERT INTO club_categories 
+		VALUES (#{categoryId}, #{parentCategoryId}, #{categoryTitle})
+	</insert>
+	
+	<select id="selectGrandCategories" resultMap="ClubCategoryMap">
+		SELECT * FROM club_categories WHERE parent_cat_id = 0
+	</select>
+	
+	<select id="selectClubCategories" parameterType="Integer" resultMap="ClubCategoryMap">
+		SELECT * FROM club_categories WHERE parent_cat_id = #{parentCategoryId}
+	</select>
+	
+	<select id="selectClubCategory" parameterType="Integer" resultMap="ClubCategoryMap">
+		SELECT * FROM club_categories WHERE category_id = #{categoryId}
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- **************************** Temporary ************************** -->
+	<!-- ***************************************************************** -->
+	<select id="selectLastInsertId" resultType="Integer">
+		SELECT LAST_INSERT_ID()
+	</select>
+	
+	<select id="selectMaxClubNo" parameterType="Integer">
+		SELECT MAX(club_no) FROM clubs
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** Result Map *************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 동아리 기본 맵 -->
+	<resultMap id="ClubBaseMap" type="Club">
+		<id column="club_name" jdbcType="VARCHAR" property="clubName" />
+		<result column="club_no" jdbcType="INTEGER" property="clubNo" />
+		<result column="club_title" jdbcType="VARCHAR" property="clubTitle" />
+		<result column="grand_category_id" jdbcType="INTEGER" property="grandCategoryId" />
+		<result column="grand_category_title" jdbcType="VARCHAR" property="grandCategoryTitle" />
+		<result column="category_id" jdbcType="INTEGER" property="categoryId" />
+		<result column="category_title" jdbcType="VARCHAR" property="categoryTitle" />
+		<result column="master_name" jdbcType="VARCHAR" property="masterName" />
+		<result column="type" jdbcType="INTEGER" property="type" />
+		<result column="max_member_num" jdbcType="INTEGER" property="maxMemberNum" />
+		<result column="active" jdbcType="BOOLEAN" property="active" />
+		<result column="recruit" jdbcType="BOOLEAN" property="recruit" />
+		<result column="club_introduction" jdbcType="VARCHAR" property="clubIntroduction" />
+		<result column="date_of_created" jdbcType="TIMESTAMP" property="dateOfCreated" />
+	</resultMap>
+	
+	<!-- 동아리 회원을 위한 Result Map -->
+	<resultMap id="ClubMemberMap" type="User">
+		<id column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="user_no" jdbcType="INTEGER" property="userNo" />
+		<result column="email" jdbcType="VARCHAR" property="email" />
+		<result column="date_of_join" jdbcType="TIMESTAMP" property="dateOfJoin" />
+		<result column="nickname" jdbcType="VARCHAR" property="nickname" />
+		<result column="user_real_name" jdbcType="VARCHAR" property="userRealName" />
+		<result column="date_of_birth" jdbcType="TIMESTAMP" property="dateOfBirth" />
+		<result column="join_date" jdbcType="TIMESTAMP" property="dateOfClubJoin" />
+		<result column="active" jdbcType="BOOLEAN" property="active" />
+		<association property="profilePicture" column="pic_id" javaType="ProfilePicture">
+			<id  column="pic_id" jdbcType="INTEGER" property="picId" />
+			<result column="user_name" jdbcType="VARCHAR" property="userName" />
+			<result column="file_name" jdbcType="VARCHAR" property="fileName" />
+		</association>
+	</resultMap>
+	
+	<!-- 동아리 운영진을 위한 Result Map -->
+	<resultMap id="ClubCrewMap" type="User">
+		<result column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="user_no" jdbcType="INTEGER" property="userNo" />
+		<result column="nickname" jdbcType="VARCHAR" property="nickname" />
+		<result column="appointed_date" jdbcType="TIMESTAMP" property="clubCrewAppointedDate" />
+	</resultMap>
+	
+	<!-- 회원 검색을 위한 축약 Result Map -->
+	<resultMap id="ClubMemberAbbreviationMap" type="User">
+		<id column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="user_no" jdbcType="INTEGER" property="userNo" />
+		<result column="nickname" jdbcType="VARCHAR" property="nickname" />
+		<result column="join_date" jdbcType="TIMESTAMP" property="dateOfClubJoin" />
+	</resultMap>
+	
+	<!-- 운영진 검색을 위한 축약 Result Map -->
+	<resultMap id="ClubCrewAbbreviationMap" type="User">
+		<id column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="user_no" jdbcType="INTEGER" property="userNo" />
+		<result column="nickname" jdbcType="VARCHAR" property="nickname" />
+		<result column="appointed_date" jdbcType="TIMESTAMP" property="clubCrewAppointedDate" />
+	</resultMap>
+	
+	<!-- 동아리 가입 정보 맵 -->
+	<resultMap id="clubJoinInformationMap" type="ClubJoinInfo">
+		<result column="club_name" jdbcType="VARCHAR" property="clubName" />
+		<result column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="club_title" jdbcType="VARCHAR" property="clubTitle" />
+		<result column="comment" jdbcType="VARCHAR" property="comment" />
+	</resultMap>
+	
+	<!-- 동아리 카테고리 Result Map -->
+	<resultMap id="ClubCategoryMap" type="ClubCategory">
+		<id column="category_id" jdbcType="INTEGER" property="categoryId" />
+		<result column="parent_cat_id" jdbcType="INTEGER" property="parentCategoryId" />
+		<result column="category_title" jdbcType="VARCHAR" property="categoryTitle" />
+	</resultMap>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** For Test ************************** -->
+	<!-- ***************************************************************** -->
+	<delete id="testDeleteClub">
+		DELETE FROM clubs WHERE club_name = #{clubName}
+	</delete>
+	
+	<delete id="testDeleteClubMemberAll">
+		DELETE FROM club_members WHERE club_name = #{clubName}
+	</delete>
+</mapper>

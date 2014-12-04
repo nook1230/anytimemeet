@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mamascode.mybatis.mapper.UserMapper">
+	<!-- ***************************************************************** -->
+	<!-- ************************** 갱신 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 새로운 사용자 계정 생성 -->
+	<insert id="insertNewUser" parameterType="User">
+		INSERT INTO users (user_name, passwd, email, date_of_join, certification_key) 
+		VALUES (#{userName}, SHA(#{passwd}), #{email}, NOW(), #{certificationKey})
+	</insert>
+	
+	<!-- 사용자 계정 비활성화 -->
+	<update id="inactivateUserAccount" parameterType="String">
+		UPDATE users SET active = 0 WHERE user_name = #{userName}
+	</update>
+	
+	<!-- 사용자 계정 활성화 -->
+	<update id="activateUserAccount" parameterType="String">
+		UPDATE users SET active = 1 WHERE user_name = #{userName}
+	</update>
+	
+	<!-- 사용자 계정 정보 수정 -->
+	<update id="updateUserAccount" parameterType="User">
+		UPDATE users SET nickname = #{nickname}, user_real_name = #{userRealName}, 
+		date_of_birth = #{dateOfBirth}, user_introduction = #{userIntroduction} WHERE user_no = #{userNo}
+	</update>
+	
+	<!-- 사용자 계정 삭제 -->
+	<delete id="deleteUserAccount" parameterType="String">
+		DELETE FROM users WHERE user_name = #{userName}
+	</delete>
+	
+	<!-- 사용자 비밀번호 변경 -->
+	<update id="changePassword" parameterType="hashmap">
+		UPDATE users SET passwd = SHA(#{password}) WHERE user_name = #{userName}
+	</update>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 조회 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 사용자 계정 총 수 조회 -->
+	<select id="selectCountDefault" resultType="Integer">
+		SELECT COUNT(*) FROM users
+	</select>
+	
+	<!-- 사용자 계정 이름 중복 체크 -->
+	<select id="selectCountCheckUserName" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM users WHERE user_name = #{userName}
+	</select>
+	
+	<!-- 이메일 계정 중복 체크 -->
+	<select id="selectCountCheckEmail" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM users WHERE email = #{email}
+	</select>
+	
+	<!-- 사용자 계정 총 수 조회(조건 검색) -->
+	<select id="selectCountSearch" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM users
+		<if test="searchby == 1">
+		WHERE user_name LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		
+		<if test="searchby == 2">
+		WHERE nickname LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		
+		<if test="searchby == 3">
+		WHERE user_real_name LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		
+		<if test="searchby == 4">
+		WHERE user_name LIKE CONCAT('%', #{keyword}, '%') OR nickname LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+	</select>
+	
+	<!-- 사용자 계정 조회(user_no) -->
+	<select id="selectUserByNo" parameterType="Integer" resultMap="UserBaseMap">
+		SELECT user_name, user_no, email, date_of_join,
+			certification_key, nickname, user_real_name,
+			date_of_birth, active, certified, user_introduction
+		FROM users WHERE user_no = #{userNo}
+	</select>
+	
+	<!-- 사용자 계정 조회(user_name) -->
+	<select id="selectUserByName" parameterType="String" resultMap="UserBaseMap">
+		SELECT user_name, user_no, email, date_of_join,
+			certification_key, nickname, user_real_name,
+			date_of_birth, active, certified, user_introduction
+		FROM users WHERE user_name = #{userName}
+	</select>
+	
+	<!-- 사용자 계정 이름(user_name) 중복 체크 -->
+	<select id="userNameCheck" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM users WHERE user_name = #{userName}
+	</select>
+	
+	<!-- 사용자 계정 이름(user_name) 중복 체크 -->
+	<select id="emailCheck" parameterType="String" resultType="Integer">
+		SELECT COUNT(*) FROM users WHERE email = #{email}
+	</select>
+	
+	<!-- 사용자의 동아리 가입 신청 현황 -->
+	<select id="selectApplyingClubs" parameterType="String" resultMap="clubJoinInformationMap">
+		SELECT c.club_name, c.club_title FROM clubs AS c, club_join_applications AS cj 
+		WHERE c.club_name = cj.club_name AND cj.user_name = #{userName}
+	</select>
+	
+	<!-- 사용자의 동아리 가입 초대 현황 -->
+	<select id="selectInvitedClubs" parameterType="String" resultMap="clubJoinInformationMap">
+		SELECT c.club_name, c.club_title FROM clubs AS c, club_invitations AS ci 
+		WHERE c.club_name = ci.club_name AND ci.user_name = #{userName}
+	</select>
+	
+	<!-- 사용자 계정 리스트 -->
+	<select id="selectUserListDefault" resultMap="UserBaseMap">
+		SELECT user_name, user_no, email, date_of_join,
+			certification_key, nickname, user_real_name,
+			date_of_birth, active, certified, user_introduction
+		FROM users ORDER BY user_no DESC
+	</select>
+	
+	<select id="selectUserListSearch" resultMap="UserBaseMap">
+		SELECT user_name, user_no, email, date_of_join,
+			certification_key, nickname, user_real_name,
+			date_of_birth, active, certified, user_introduction FROM users 
+		<if test="searchby == 1">
+		WHERE user_name LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		
+		<if test="searchby == 2">
+		WHERE nickname LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		
+		<if test="searchby == 3">
+		WHERE user_real_name LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		
+		<if test="searchby == 4">
+		WHERE user_name LIKE CONCAT('%', #{keyword}, '%') OR nickname LIKE CONCAT('%', #{keyword}, '%')
+		</if>
+		ORDER BY user_no DESC
+	</select>
+	
+	<!-- 사용자 이름 검색 -->
+	<select id="selectUserNameByKeyword" parameterType="String" resultType="String">
+		SELECT user_name FROM users 
+		WHERE user_name = #{keyword} OR email = #{keyword}
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 보안 관련 구문들 *************************** -->
+	<!-- ***************************************************************** -->
+	
+	<select id="validLoginCheckUserName" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(user_no) FROM users WHERE user_name = #{userName} AND passwd = SHA(#{password})
+	</select>
+	
+	<select id="validLoginCheckUserNo" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(user_no) FROM users WHERE user_no = #{userNo} AND passwd = SHA(#{password})
+	</select>
+	
+	<select id="validCertification" resultType="Integer">
+		SELECT COUNT(user_name) FROM users 
+		WHERE user_name = #{userName} AND certification_key = #{certificationKey}
+	</select>
+	
+	<select id="certificationCheck" parameterType="String" resultType="BOOLEAN">
+		SELECT certified FROM users WHERE user_name = #{userName}
+	</select>
+	
+	<update id="setCertification" parameterType="hashmap">
+		UPDATE users SET certified = #{certified} WHERE user_name = #{userName}
+	</update>
+	
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** Result Map *************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 사용자 기본 맵 -->
+	<resultMap id="UserBaseMap" type="User">
+		<id column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="user_no" jdbcType="INTEGER" property="userNo" />
+		<result column="email" jdbcType="VARCHAR" property="email" />
+		<result column="date_of_join" jdbcType="TIMESTAMP" property="dateOfJoin" />
+		<result column="certification_key" jdbcType="VARCHAR" property="certificationKey" />
+		<result column="nickname" jdbcType="VARCHAR" property="nickname" />
+		<result column="user_real_name" jdbcType="VARCHAR" property="userRealName" />
+		<result column="date_of_birth" jdbcType="TIMESTAMP" property="dateOfBirth" />
+		<result column="active" jdbcType="BOOLEAN" property="active" />
+		<result column="certified" jdbcType="BOOLEAN" property="certified" />
+		<result column="user_introduction" jdbcType="VARCHAR" property="userIntroduction" />
+	</resultMap>
+	
+	<!-- 동아리 가입 정보 맵 -->
+	<resultMap id="clubJoinInformationMap" type="ClubJoinInfo">
+		<result column="club_name" jdbcType="VARCHAR" property="clubName" />
+		<result column="club_title" jdbcType="VARCHAR" property="clubTitle" />
+	</resultMap>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** For Test ************************** -->
+	<!-- ***************************************************************** -->
+	<delete id="deleteAll">
+		DELETE FROM users
+	</delete>
+	
+	<select id="selectMaxUserNo" resultType="Integer">
+		SELECT MAX(user_no) FROM users
+	</select>
+	
+</mapper>

@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mamascode.mybatis.mapper.MeetingMapper">
+	<!-- ***************************************************************** -->
+	<!-- ************************** 갱신 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 새 모임 공지 글 작성 -->
+	<insert id="insertNewMeeting" parameterType="Meeting">
+		INSERT INTO meetings 
+		(club_name, title, administrator_name, introduction, location, reg_date) 
+		VALUES (#{clubName}, #{title}, #{administratorName}, #{introduction}, #{location}, NOW())
+	</insert>
+	
+	<!-- 모임 날짜 추가 -->
+	<insert id="insertNewMeetingDate" parameterType="MeetingDate">
+		INSERT INTO meeting_dates 
+		(meeting_id, recommended_date, recommended_time) 
+		VALUES (#{meetingId}, #{recommendedDate}, #{recommendedTime})
+	</insert>
+	
+	<!-- 모임 공지 글 내용 수정 -->
+	<update id="updateMeeting" parameterType="Meeting">
+		UPDATE meetings SET title = #{title}, 
+			introduction = #{introduction}, location = #{location} 
+		WHERE meeting_id = #{meetingId}
+	</update>
+	
+	<!-- 모임 공지 글 삭제 -->
+	<delete id="deleteMeeting" parameterType="Integer">
+		DELETE FROM meetings WHERE meeting_id = #{meetingId}
+	</delete>
+	
+	<!-- 모임 참가자 목록 지우기 -->
+	<delete id="deleteMeetingMembers" parameterType="Integer">
+		DELETE FROM meeting_members WHERE date_id = #{dateId}
+	</delete>
+	
+	<!-- 모임 날짜 목록 지우기 -->
+	<delete id="deleteMeetingDates" parameterType="Integer">
+		DELETE FROM meeting_dates WHERE meeting_id = #{meetingId}
+	</delete>
+	
+	<!-- 모임 참석자 수 조회 -->
+	<select id="selectMeetingMembersCount" parameterType="Integer" resultType="Integer">
+		SELECT COUNT(*) FROM meeting_members WHERE date_id = #{dateId}
+	</select>
+	
+	<!-- 해당 모임의 모임 날짜 식별 번호 목록 조회 -->
+	<select id="selectDateIds" parameterType="Integer" resultType="Integer">
+		SELECT date_id FROM meeting_dates WHERE meeting_id = #{meetingId}
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 조회 SQL 구문들 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 모임 공지 글 전체 수 -->
+	<select id="selectCount" resultType="Integer">
+		SELECT COUNT(*) FROM meetings
+	</select>
+	
+	<!-- 모임 공지 글 보기 -->
+	<select id="selectMeeting" parameterType="Integer" resultMap="MeetingBaseMap">
+		SELECT m.meeting_id, m.club_name, m.title, m.administrator_name, 
+			m.introduction, m.location, m.meeting_status, m.reg_date, u.nickname
+		FROM meetings AS m LEFT OUTER JOIN users AS u
+			ON m.administrator_name = u.user_name
+		WHERE meeting_id = #{meetingId}
+	</select>
+	
+	<!-- 모임 날짜 조회 -->
+	<select id="selectMeetingDates" parameterType="Integer" resultMap="MeetingDateMap">
+		SELECT md.date_id, md.meeting_id, md.recommended_date, 
+			md.recommended_time, md.date_status, COUNT(mm.date_id) AS count 
+		FROM meeting_dates AS md LEFT OUTER JOIN meeting_members AS mm 
+			ON md.date_id = mm.date_id WHERE md.meeting_id = #{meetingId} 
+		GROUP BY md.date_id, md.meeting_id, md.recommended_date, 
+			md.recommended_time, md.date_status
+	</select>
+	
+	<!-- 모임 공지 글 보기 -->
+	<select id="selectMeetingList" resultMap="MeetingBaseMap">
+		SELECT m.meeting_id, m.club_name, m.title, m.administrator_name, 
+			m.introduction, m.location, m.meeting_status, m.reg_date, u.nickname
+		FROM meetings AS m LEFT OUTER JOIN users AS u
+			ON m.administrator_name = u.user_name
+	</select>
+	
+	<!-- 내 동아리의 모임 공지 글 개수 -->
+	<select id="selectCountMyClubMeeting" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM meetings 
+		WHERE club_name = #{clubName} 
+		<if test="meetingStatus != -1">AND meeting_status = #{meetingStatus}</if>
+	</select>
+	
+	<!-- 내 동아리의 모임 공지 글 목록 -->
+	<select id="selectMyClubMeetings" parameterType="hashmap" resultMap="MeetingBaseMap">
+		SELECT m.meeting_id, m.club_name, m.title, m.administrator_name, 
+			m.introduction, m.location, m.meeting_status, m.reg_date, u.nickname
+		FROM meetings AS m LEFT OUTER JOIN users AS u
+			ON m.administrator_name = u.user_name 
+		WHERE club_name = #{clubName} 
+		<if test="meetingStatus != -1">AND meeting_status = #{meetingStatus}</if>
+		ORDER BY reg_date DESC
+	</select>
+	
+	<!-- 모임 공지 아이디 조회(by date_id) -->
+	<select id="selectMeetingIdByDateId" parameterType="Integer" resultType="Integer">
+		SELECT meeting_id FROM meeting_dates WHERE date_id = #{dateId}
+	</select>
+	
+	<!-- 해당 날짜의 모임 참석자 수 -->
+	<select id="selectCountMeetingMembers" parameterType="Integer" resultType="Integer">
+		SELECT COUNT(*) FROM meeting_members WHERE date_id = #{dateId}
+	</select>
+	
+	<!-- 해당 날짜의 모임 참석자 목록 -->
+	<select id="selectMeetingMembers" parameterType="Integer" resultMap="MeetingMemberMap">
+		SELECT u.user_name, u.nickname FROM users AS u, meeting_members AS m 
+		WHERE u.user_name = m.user_name AND m.date_id = #{dateId} 
+	</select>
+	
+	<!-- ***************************************************************** -->
+	
+	<!-- 현재 세션에서 최종적으로 삽입된 레코드 식별 번호 -->
+	<select id="selectLastInsertId" resultType="Integer">
+		SELECT LAST_INSERT_ID()
+	</select>
+	
+	<!-- meeting_id의 최대 번호 -->
+	<select id="selectMaxMeetingId" resultType="Integer">
+		SELECT MAX(meeting_id) FROM meetings
+	</select>
+	
+	<!-- 동아리의 모임 글 식별번호 리스트 -->
+	<select id="selectMeetingIdForMyClub" parameterType="String" resultType="Integer">
+		SELECT meeting_id FROM meetings WHERE club_name = #{clubName}
+	</select>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** 모임 참가, 설정 ************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 동아리 모임 참가 멤버 추가 -->
+	<insert id="insertMeetingMember" parameterType="hashmap">
+		INSERT INTO meeting_members VALUES (#{dateId}, #{memberName}, NOW())
+	</insert>
+	
+	<!-- 모임 참석자인지 확인 -->
+	<select id="checkMeetingMember" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*) FROM meeting_members 
+		WHERE date_id = #{dateId} AND user_name = #{memberName}
+	</select>
+	
+	<!-- 모임의 상태 변경 -->
+	<update id="updateMeetingStatus" parameterType="hashmap">
+		UPDATE meetings SET meeting_status = #{status} WHERE meeting_id = #{meetingId}
+	</update>
+	
+	<!-- 모임 날짜 정보 변경 -->
+	<update id="updateMeetingDate" parameterType="MeetingDate">
+		UPDATE meeting_dates SET recommended_date = #{recommendedDate}, 
+			recommended_time = #{recommendedTime}, date_status = #{dateStatus} 
+		WHERE date_id = #{dateId}
+	</update>
+	
+	<!-- 모임 날짜 상태 변경 -->
+	<update id="updateMeetingDateStatus" parameterType="hashmap">
+		UPDATE meeting_dates SET date_status = #{status} WHERE date_id = #{dateId}
+	</update>
+	
+	<!-- 모임 날짜 상태 변경(by meeting_id) -->
+	<update id="updateMeetingDateStatusByMeetingId" parameterType="hashmap">
+		UPDATE meeting_dates SET date_status = #{status} WHERE meeting_id = #{meetingId}
+	</update>
+	
+	<!-- ***************************************************************** -->
+	<!-- ************************** Result Map *************************** -->
+	<!-- ***************************************************************** -->
+	
+	<!-- 모임 기본 맵 -->
+	<resultMap id="MeetingBaseMap" type="Meeting">
+		<id column="meeting_id" jdbcType="INTEGER" property="meetingId" />
+		<result column="club_name" jdbcType="VARCHAR" property="clubName" />
+		<result column="title" jdbcType="VARCHAR" property="title" />
+		<result column="administrator_name" jdbcType="VARCHAR" property="administratorName" />
+		<result column="nickname" jdbcType="VARCHAR" property="administratorNickname" />
+		<result column="introduction" jdbcType="VARCHAR" property="introduction" />
+		<result column="location" jdbcType="VARCHAR" property="location" />
+		<result column="meeting_status" jdbcType="INTEGER" property="meetingStatus" />
+		<result column="reg_date" jdbcType="TIMESTAMP" property="regDate" />
+	</resultMap>
+	
+	<!-- 모임 날짜 맵 -->
+	<resultMap id="MeetingDateMap" type="MeetingDate">
+		<id column="date_id" jdbcType="INTEGER" property="dateId" />
+		<result column="meeting_id" jdbcType="INTEGER" property="meetingId" />
+		<result column="recommended_date" jdbcType="DATE" property="recommendedDate" />
+		<result column="recommended_time" jdbcType="VARCHAR" property="recommendedTime" />
+		<result column="date_status" jdbcType="INTEGER" property="dateStatus" />
+		<result column="count" jdbcType="INTEGER" property="countParticipants" />
+	</resultMap>
+	
+	<!-- 모임 참석자 맵 -->
+	<resultMap id="MeetingMemberMap" type="User">
+		<id column="user_name" jdbcType="VARCHAR" property="userName" />
+		<result column="nickname" jdbcType="VARCHAR" property="nickname" />
+	</resultMap>
+	
+	<!-- 모임 날짜 맵 -->
+	
+</mapper>
